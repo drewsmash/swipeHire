@@ -6,8 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
     id            INT AUTO_INCREMENT PRIMARY KEY,
     email         VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role          ENUM('seeker', 'employer') NOT NULL,
-    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    role          ENUM('seeker', 'employer', 'admin') NOT NULL,
+    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP NULL
 );
 
 -- One row per job seeker. The filter columns (min_compensation, job_type,

@@ -13,6 +13,7 @@
   {% elif show_all %}
     <span class="muted">Showing all jobs.</span> <a href="{{ url_for('seeker.home', q=q) }}">Use my profile filters</a>
   {% endif %}
+  {% if learned_from %}<span class="muted">· Sorted for you from {{ learned_from }} swipe{{ 's' if learned_from != 1 }}</span>{% endif %}
   {% if q %}<span class="chip">“{{ q }}”</span> <a href="{{ url_for('seeker.home', all=1 if show_all else None) }}">Clear</a>{% endif %}
 </div>
 
@@ -42,6 +43,7 @@
     <section><h3>Responsibilities</h3>{{ ui.lines(j.responsibilities) }}</section>
     <section><h3>Requirements</h3>{{ ui.lines(j.requirements) }}</section>
     <section><h3>Compensation</h3><p class="pay">{{ j|pay }}</p></section>
+    {% if j.why %}<p class="why">Why you're seeing this: {{ j.why|join(' · ') }}</p>{% endif %}
   </article>
   {% endfor %}
 </div>

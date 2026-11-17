@@ -267,3 +267,40 @@ label.inline { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
 @media (prefers-reduced-motion: reduce) {
   .card, .toast, .flash { transition: none; }
 }
+
+/* --- "Why you're seeing this" line on job cards --- */
+.why { margin-top: 14px !important; padding: 8px 12px; border-radius: 10px; font-size: .82rem;
+  background: color-mix(in srgb, var(--brand) 8%, var(--surface)); color: var(--brand); }
+
+/* --- Admin (wider layout) --- */
+.phone.wide { max-width: 1100px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.kpi { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.kpi-label { font-size: .8rem; color: var(--muted); }
+.kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.kpi-sub { font-size: .75rem; color: var(--muted); }
+.admin-section { margin-bottom: 14px; background: var(--surface); }
+.admin-section h2 { font-size: 1rem; margin-bottom: 10px; }
+.admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.admin-grid .admin-section { margin-bottom: 0; }
+.admin-grid + .admin-section { margin-top: 14px; }
+.bars { display: flex; align-items: flex-end; gap: 4px; height: 170px; padding-top: 18px; }
+.bar-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; min-width: 0; }
+.bar { width: 100%; max-width: 30px; min-height: 2px; background: var(--brand); border-radius: 4px 4px 0 0; }
+.bar-num { font-size: .7rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar-day { font-size: .7rem; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; margin: 0 -16px; padding: 0 16px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.tbl th { text-align: left; font-size: .75rem; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl tr.closed { opacity: .6; }
+.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: .88rem; }
+.feed li { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: baseline; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.dot.seeker { background: var(--brand); } .dot.employer { background: var(--like); } .dot.signup { background: #d97706; }
+.small-seg { margin-bottom: 12px; }
+.small-seg a { font-size: .85rem; padding: 6px; }
+.role-admin { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
+.role-employer { color: #15803d; border-color: #bbf7d0; background: #f0fdf4; }
+.role-seeker { color: var(--brand); border-color: #c7d2fe; background: #eef2ff; }

@@ -36,7 +36,8 @@ by the other Docker sites on this machine. Change `WEB_PORT` in `.env` if needed
 | `docker compose down -v` | Stop **and wipe** the database + uploads → re-seeds demo data next start |
 | `docker compose exec db mysql -u swipehire_app -p swipehire` | SQL shell (password = `DB_PASSWORD` in `.env`) |
 | `docker compose exec web python fake_jobs.py 100` | Add 100 more fake job listings (keeps existing data) |
-| `docker compose exec web python fake_jobs.py --clear` | Remove all fake companies and their jobs |
+| `docker compose exec web python fake_jobs.py seekers 30` | Add 30 more fake seekers with swipe history |
+| `docker compose exec web python fake_jobs.py --clear` | Remove all fake companies, their jobs, and fake seekers |
 | `docker compose ps` | Both containers should say `(healthy)` |
 
 ### Demo accounts
@@ -49,15 +50,18 @@ Seeded the first time the database is empty. Password for all of them is
 | `seeker@swipehire.test` | Seeker (Alex Rivera) | Already matched with Google, Nvidia, Lockheed Martin (like the sketch) |
 | `maria@`, `jordan@`, `sam@`, `taylor@swipehire.test` | Seekers | Have liked Google jobs |
 | `google@swipehire.test` | Employer | Has applicants waiting to be swiped |
+| `admin@swipehire.test` | **Admin** | Stats dashboard, all users ("clients"), all jobs. Re-created on every start if missing |
 | `nvidia@`, `lockheed@`, `publix@`, `royal@`, `chewy@`, `baptist@`, `fpl@swipehire.test` | Employers | One company each |
 
 You can also sign up new seekers or employers from the login page.
 
-**Fake test listings:** on first start, `fake_jobs.py` also adds 60 made-up jobs
+**Fake test data:** on first start, `fake_jobs.py` also adds 60 made-up jobs
 from 18 fictional companies (Bayfront Analytics, Starfish Games, Little Havana
-Eats, ...). Each company only posts roles that fit its industry. Their employer
-logins are `<companyname>@fake.swipehire.test` with the same demo password.
-Total on a fresh start: 72 jobs.
+Eats, ...) and 30 fake seekers with a two-week swipe history (employers answer
+about half of their right swipes). Each company only posts roles that fit its
+industry. Logins are `<companyname>@fake.swipehire.test` and
+`<first>.<last><n>@fake.swipehire.test`, same demo password.
+Fresh start totals: 72 jobs, 35 seekers, 26 employers, ~400 swipes, ~35 matches.
 
 **Guest mode:** the login page has "Guest job seeker" and "Guest employer"
 buttons (`POST /guest`). They log straight into `seeker@swipehire.test` /
@@ -83,10 +87,13 @@ views/common.py      current_user(), @login_required(role), pay/label formatting
 views/auth.py        /login, /guest (one-click demo login), /signup?role=seeker|employer, /logout
 views/seeker.py      /home (job swipe), /jobs/<id>/swipe, /profile, /matches
 views/employer.py    /employer/applicants, /employer/jobs (+ new/edit/toggle), /employer/company, /employer/matches
+views/recommend.py   Job recommendation algorithm (orders the Homepage cards, see below)
+views/admin.py       /admin (stats), /admin/users, /admin/jobs – read-only, admin role only
 views/files.py       Upload saving + /files/<resume|photo>/<seeker_id> with access check
 templates/base.html  Phone shell: top bar (Menu + account icon), search slot, page title, bottom tab bar
 templates/_macros.html  search bar, bullet lines, ✕/✓ swipe buttons
 templates/seeker/*   home.html (card stack), profile.html, matches.html
+templates/admin/*    stats.html (KPI tiles, swipes-per-day bars, top jobs, activity feed), users.html, jobs.html
 templates/employer/* applicants.html (card stack), jobs.html, job_form.html, company.html, matches.html
 static/app.js        Swipe logic: drag gesture, ✕/✓ buttons, ←/→ keys, fetch POST, toast
 static/style.css     All styles; colors are CSS variables at the top (light theme only – dark mode was removed on purpose)
@@ -102,6 +109,21 @@ static/style.css     All styles; colors are CSS variables at the top (light them
   filtered by profile: minimum compensation (hourly pay × 2080 to compare with yearly),
   job type, full/part time. "Show all" (`?all=1`) ignores the filters.
   Jobs whose title matches the preferred job title are sorted first.
+- **Recommendations** (`views/recommend.py`): after the filters above pick which jobs
+  can show, every job gets a score and the best come first:
+  1. *Profile fit* – shares words with the preferred job title (up to +3), matches
+     job type (+1) / schedule (+0.5), pay over the minimum (+0.5, or -2 under it with "Show all").
+  2. *Learned taste* – every past swipe adds weight to that job's features (title words,
+     company, job type, schedule, pay band, city): right = +1, left = -0.6, newer swipes count
+     more (5% less per older swipe). A job's learned score is the sum of its features' weights,
+     divided by sqrt(number of swipes) so the profile still matters.
+  3. *Freshness* – posted in the last 7 days: +0.3.
+  Each card shows the top reasons ("Why you're seeing this: ..."). The order updates on the
+  next page load, not mid-stack. Tested: a seeker who only swipes right on design jobs gets
+  Graphic Designer / UX jobs at the top on the next load.
+- **Admin** (`views/admin.py`): role `admin` in `users.role`. Stats use live SQL counts;
+  "active users" uses `users.last_login_at` (set on every login, including guest buttons).
+  Admin pages are read-only – no delete/ban buttons yet.
 - **Applicants** feed = seekers who liked one of the employer's jobs and the
   employer hasn't swiped on yet.
 - **Files**: a resume/photo is visible to its owner and to employers whose job the seeker liked.
@@ -129,6 +151,8 @@ static/style.css     All styles; colors are CSS variables at the top (light them
 
 ## Ideas / TODO (not done yet)
 
+- [ ] Admin actions: close jobs, disable/delete users, export CSV
+- [ ] Rank the employer Applicants queue by fit too (currently oldest first)
 - [ ] Real distance filter (add lat/long or ZIP to jobs and profiles)
 - [ ] "Undo last swipe" button
 - [ ] Messaging between matched seeker and employer

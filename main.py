@@ -9,8 +9,8 @@ import secrets
 from flask import Flask, abort, redirect, request, session, url_for
 
 import db
-from views import auth, employer, files, seeker
-from views.common import current_user, fmt_pay, label
+from views import admin, auth, employer, files, seeker
+from views.common import current_user, fmt_pay, label, timeago
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY") or secrets.token_hex(32)
@@ -20,9 +20,11 @@ app.register_blueprint(auth.bp)
 app.register_blueprint(seeker.bp)
 app.register_blueprint(employer.bp)
 app.register_blueprint(files.bp)
+app.register_blueprint(admin.bp)
 
 app.add_template_filter(fmt_pay, "pay")
 app.add_template_filter(label, "label")
+app.add_template_filter(timeago, "ago")
 
 
 @app.before_request
@@ -49,6 +51,8 @@ def home():
         return redirect(url_for("auth.login"))
     if user["role"] == "employer":
         return redirect(url_for("employer.applicants"))
+    if user["role"] == "admin":
+        return redirect(url_for("admin.stats"))
     return redirect(url_for("seeker.home"))
 
 

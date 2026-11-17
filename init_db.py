@@ -134,6 +134,23 @@ def create_tables():
             db.execute(statement)
 
 
+def migrate():
+    """Bring databases created by older versions up to date (safe to run every start)."""
+    db.execute("ALTER TABLE users MODIFY role ENUM('seeker', 'employer', 'admin') NOT NULL")
+    has_col = db.fetch_one("""SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+                              AND TABLE_NAME = 'users' AND COLUMN_NAME = 'last_login_at'""")
+    if not has_col:
+        db.execute("ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP NULL")
+
+
+def ensure_admin():
+    """Make sure the demo admin account exists (admin@swipehire.test)."""
+    if not db.fetch_one("SELECT 1 FROM users WHERE email = 'admin@swipehire.test'"):
+        db.execute("INSERT INTO users (email, password_hash, role) VALUES ('admin@swipehire.test', %s, 'admin')",
+                   (generate_password_hash(os.getenv("DEMO_PASSWORD", "swipehire")),))
+        print("Created admin@swipehire.test")
+
+
 def seed():
     if db.fetch_one("SELECT COUNT(*) AS n FROM users")["n"]:
         print("Database already has users; skipping demo data.")
@@ -178,9 +195,12 @@ def seed():
     print(f"Seeded {len(COMPANIES)} companies, {len(JOBS)} jobs, {len(SEEKERS)} seekers.")
     # Extra made-up listings for testing (see fake_jobs.py). Fixed seed = same jobs every reset.
     print(f"Added {fake_jobs.add_fake_jobs(60, seed=15)} fake test jobs.")
+    print(f"Added {fake_jobs.add_fake_seekers(30, seed=15)} fake seekers with two weeks of swipe history.")
 
 
 if __name__ == "__main__":
     wait_for_db()
     create_tables()
+    migrate()
     seed()
+    ensure_admin()

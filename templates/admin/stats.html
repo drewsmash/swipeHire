@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Admin stats{% endblock %}
+{% block heading %}Admin · Stats{% endblock %}
+{% block content %}
+<div class="kpis">
+  <div class="kpi"><div class="kpi-label">Job seekers</div><div class="kpi-value">{{ k.seekers }}</div></div>
+  <div class="kpi"><div class="kpi-label">Employers</div><div class="kpi-value">{{ k.employers }}</div></div>
+  <div class="kpi"><div class="kpi-label">Open jobs</div><div class="kpi-value">{{ k.open_jobs }}</div><div class="kpi-sub">of {{ k.all_jobs }} posted</div></div>
+  <div class="kpi"><div class="kpi-label">Matches</div><div class="kpi-value">{{ k.matches }}</div><div class="kpi-sub">{{ k.match_rate }}% of right swipes</div></div>
+  <div class="kpi"><div class="kpi-label">Total swipes</div><div class="kpi-value">{{ '{:,}'.format(k.swipes|int) }}</div><div class="kpi-sub">{{ k.right_rate }}% of seeker swipes are right</div></div>
+  <div class="kpi"><div class="kpi-label">Waiting on employers</div><div class="kpi-value">{{ k.waiting }}</div><div class="kpi-sub">right swipes not reviewed</div></div>
+  <div class="kpi"><div class="kpi-label">Sign-ups (7 days)</div><div class="kpi-value">{{ k.signups_7d }}</div></div>
+  <div class="kpi"><div class="kpi-label">Active users (7 days)</div><div class="kpi-value">{{ k.active_7d }}</div></div>
+</div>
+
+<section class="panel admin-section">
+  <h2>Swipes per day <small class="muted">last 14 days, UTC</small></h2>
+  <div class="bars" role="img" aria-label="Swipes per day for the last 14 days">
+    {% for d, v in daily.items() %}
+      <div class="bar-col" title="{{ d.strftime('%b %d') }}: {{ v.swipes }} swipes, {{ v.matches }} matches, {{ v.signups }} sign-ups">
+        <span class="bar-num">{{ v.swipes or '' }}</span>
+        <div class="bar" style="height: {{ (100 * v.swipes / peak)|round(1) }}%"></div>
+        <span class="bar-day">{{ d.strftime('%d') }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  <p class="muted small">Hover a bar for matches and sign-ups that day.</p>
+</section>
+
+<div class="admin-grid">
+  <section class="panel admin-section">
+    <h2>Most-liked jobs</h2>
+    <table class="tbl">
+      <thead><tr><th>Job</th><th class="num">Right</th><th class="num">Seen</th><th class="num">Matched</th></tr></thead>
+      <tbody>
+      {% for j in top_jobs %}
+        <tr><td>{{ j.title }}<br><small class="muted">{{ j.company }}{% if not j.is_open %} · closed{% endif %}</small></td>
+            <td class="num">{{ j.interested|int }}</td><td class="num">{{ j.seen }}</td><td class="num">{{ j.matched }}</td></tr>
+      {% else %}<tr><td colspan="4" class="muted">No swipes yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel admin-section">
+    <h2>Companies with the most matches</h2>
+    <table class="tbl">
+      <thead><tr><th>Company</th><th class="num">Matches</th></tr></thead>
+      <tbody>
+      {% for c in top_companies %}<tr><td>{{ c.name }}</td><td class="num">{{ c.matches }}</td></tr>
+      {% else %}<tr><td colspan="2" class="muted">No matches yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<section class="panel admin-section">
+  <h2>Recent activity</h2>
+  <ul class="feed">
+    {% for r in recent %}
+      <li><span class="dot {{ r.kind }}"></span>
+        <span><b>{{ r.who }}</b> {{ r.what }} <b>{{ r.target }}</b></span>
+        <small class="muted">{{ r.at|ago(now) }}</small></li>
+    {% else %}<li class="muted">Nothing yet.</li>{% endfor %}
+  </ul>
+</section>
+{% endblock %}

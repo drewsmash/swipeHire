@@ -3,6 +3,7 @@ import mysql.connector
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 
 import db
+from views import recommend
 from views.common import current_user, like_param, login_required, to_int, wants_json
 from views.files import save_upload
 
@@ -48,15 +49,20 @@ def home():
             params.append(profile["schedule"])
             filters.append(profile["schedule"])
 
-    order_param = like_param(profile["preferred_title"]) if profile and profile["preferred_title"] else "%"
-    jobs = db.fetch_all(
+    candidates = db.fetch_all(
         f"""SELECT j.*, c.name AS company
             FROM jobs j JOIN companies c ON c.id = j.company_id
             WHERE {' AND '.join(where)}
-            ORDER BY (j.title LIKE %s) DESC, j.created_at DESC, j.id DESC
-            LIMIT 25""",
-        (*params, order_param))
-    return render_template("seeker/home.html", jobs=jobs, q=q, filters=filters, show_all=show_all)
+            ORDER BY j.created_at DESC LIMIT 1000""",
+        params)
+    # Past swipes, newest first, teach the recommender what this seeker likes.
+    history = db.fetch_all(
+        """SELECT j.*, s.liked FROM seeker_swipes s JOIN jobs j ON j.id = s.job_id
+           WHERE s.seeker_id = %s ORDER BY s.created_at DESC LIMIT %s""",
+        (me["id"], recommend.HISTORY_LIMIT))
+    jobs = recommend.rank(candidates, profile, history)
+    return render_template("seeker/home.html", jobs=jobs, q=q, filters=filters, show_all=show_all,
+                           learned_from=len(history))
 
 
 @bp.post("/jobs/<int:job_id>/swipe")

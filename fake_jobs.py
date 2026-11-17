@@ -1,14 +1,18 @@
-"""Fill the database with fake job listings for testing.
+"""Fill the database with fake job listings and fake seekers for testing.
 
 Run inside the web container (works on an existing database, keeps all data):
-    docker compose exec web python fake_jobs.py            # adds 60 jobs
-    docker compose exec web python fake_jobs.py 200        # adds 200 jobs
-    docker compose exec web python fake_jobs.py --clear    # removes all fake companies + their jobs
+    docker compose exec web python fake_jobs.py              # adds 60 jobs
+    docker compose exec web python fake_jobs.py 200          # adds 200 jobs
+    docker compose exec web python fake_jobs.py seekers 30   # adds 30 seekers who swipe on jobs
+    docker compose exec web python fake_jobs.py --clear      # removes ALL fake companies, jobs and seekers
 
-All companies here are made up. Each one gets an employer login
-<slug>@fake.swipehire.test with the DEMO_PASSWORD, so you can also log in as
-them. init_db.py calls add_fake_jobs() on first start.
+Everything here is made up. Fake companies log in as <slug>@fake.swipehire.test,
+fake seekers as <first>.<last><n>@fake.swipehire.test, all with DEMO_PASSWORD.
+Fake seekers get a two-week swipe history (and employers answer some of them),
+so the admin stats and employer applicant queues have data.
+init_db.py calls add_fake_jobs() and add_fake_seekers() on first start.
 """
+import datetime as dt
 import os
 import random
 import sys
@@ -201,6 +205,7 @@ def add_fake_jobs(count=60, seed=None):
     pw = generate_password_hash(os.getenv("DEMO_PASSWORD", "swipehire"))
     company_ids = ensure_companies(pw)
     rows = []
+    now = dt.datetime.utcnow()
     for _ in range(count):
         title, cat, resp, req, lo, hi, period, schedules = rng.choice(ROLES)
         level = rng.random()
@@ -222,12 +227,90 @@ def add_fake_jobs(count=60, seed=None):
         rows.append((
             rng.choice([cid for cid, cats in company_ids if cat in cats]), title, location, job_type, rng.choice(schedules),
             "\n".join(responsibilities), "\n".join(requirements), pay_min, pay_max, period,
+            now - dt.timedelta(days=rng.uniform(0, 21)),  # posted some time in the last 3 weeks
         ))
     db.transaction([(
         """INSERT INTO jobs (company_id, title, location, job_type, schedule, responsibilities,
-                             requirements, pay_min, pay_max, pay_period) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                             requirements, pay_min, pay_max, pay_period, created_at)
+           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
         r) for r in rows])
     return len(rows)
+
+
+FIRST = ["Ana", "Ben", "Carla", "Diego", "Emma", "Femi", "Grace", "Hector", "Isla", "Jamal", "Kayla", "Luis",
+         "Mia", "Nico", "Olivia", "Priya", "Quinn", "Rosa", "Sean", "Tia", "Uma", "Victor", "Wes", "Ximena",
+         "Yusuf", "Zoe"]
+LAST = ["Alvarez", "Brooks", "Castillo", "Dang", "Ellis", "Flores", "Gomez", "Hart", "Ibarra", "Jensen",
+        "Khan", "Lopez", "Morales", "Nguyen", "Ortiz", "Park", "Reyes", "Silva", "Torres", "Vega", "Walsh"]
+CERTS = {"tech": ["CompTIA A+", "AWS Cloud Practitioner", "Security+", "Google IT Support"],
+         "design": ["Adobe Certified Professional", "Google UX Design Certificate"],
+         "business": ["HubSpot Inbound", "QuickBooks Certified User", "Google Data Analytics"],
+         "service": ["ServSafe Food Handler", "CPR/First Aid"],
+         "health": ["Certified Medical Assistant", "BLS/CPR", "Pharmacy Technician (PTCB)"],
+         "education": ["CPR/First Aid", "Tutor Certification (CRLA)"],
+         "trades": ["OSHA 10", "Forklift Operator"]}
+TITLE_CATEGORY = {t: cat for t, cat, *_ in ROLES}
+
+
+def job_category(title):
+    """Category of a generated job title (handles the "Senior " prefix)."""
+    base = title.replace("Senior ", "", 1)
+    return TITLE_CATEGORY.get(base) or TITLE_CATEGORY.get("Junior " + base)
+
+
+def add_fake_seekers(count=30, seed=None):
+    """Create fake seekers, each with a taste for 1-2 job categories, and give them
+    swipe history over the last 14 days. Employers answer about half of the right swipes."""
+    rng = random.Random(seed)
+    pw = generate_password_hash(os.getenv("DEMO_PASSWORD", "swipehire"))
+    now = dt.datetime.utcnow()
+    jobs = db.fetch_all("SELECT id, title, created_at FROM jobs WHERE is_open = 1")
+    if not jobs:
+        return 0
+    cats = sorted({r[1] for r in ROLES})
+    start = db.fetch_one("SELECT COUNT(*) AS n FROM users WHERE email LIKE %s", (f"%@{FAKE_DOMAIN}",))["n"]
+    conn = db.get_connection()
+    try:
+        cur = conn.cursor()
+        for i in range(count):
+            first, last = rng.choice(FIRST), rng.choice(LAST)
+            taste = rng.sample(cats, rng.choice([1, 1, 2]))
+            role = rng.choice([r for r in ROLES if r[1] in taste])
+            joined = now - dt.timedelta(days=rng.uniform(1, 14))
+            email = f"{first.lower()}.{last.lower()}{start + i}@{FAKE_DOMAIN}"
+            cur.execute("INSERT INTO users (email, password_hash, role, created_at) VALUES (%s,%s,'seeker',%s)",
+                        (email, pw, joined))
+            uid = cur.lastrowid
+            cur.execute(
+                """INSERT INTO seeker_profiles (user_id, full_name, phone, contact_email, preferred_title,
+                       min_compensation, job_type, commute_miles, schedule, certifications, about)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (uid, f"{first} {last}", f"(305) 555-{rng.randint(1000, 9999)}", email, role[0],
+                 rng.choice([None, None, 30000, 45000, 60000]),
+                 rng.choice(["any", "any", "remote", "hybrid", "in_person"]),
+                 rng.choice([None, 10, 20, 30, 50]), rng.choice(["any", "full_time", "part_time"]),
+                 rng.choice(CERTS[role[1]]), f"Interested in {role[1]} roles in South Florida."))
+            last_seen = joined
+            for job in rng.sample(jobs, min(len(jobs), rng.randint(6, 25))):
+                when = joined + (now - joined) * rng.random()
+                if when < job["created_at"]:
+                    continue  # nobody swipes on a job before it was posted
+                liked = rng.random() < (0.75 if job_category(job["title"]) in taste else 0.12)
+                cur.execute("INSERT INTO seeker_swipes (seeker_id, job_id, liked, created_at) VALUES (%s,%s,%s,%s)",
+                            (uid, job["id"], int(liked), when))
+                last_seen = max(last_seen, when)
+                if liked and rng.random() < 0.55:
+                    reply = min(now, when + dt.timedelta(hours=rng.uniform(1, 72)))
+                    cur.execute("INSERT INTO employer_swipes (job_id, seeker_id, liked, created_at) "
+                                "VALUES (%s,%s,%s,%s)", (job["id"], uid, int(rng.random() < 0.65), reply))
+            cur.execute("UPDATE users SET last_login_at = %s WHERE id = %s", (last_seen, uid))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    return count
 
 
 def clear_fake():
@@ -238,7 +321,10 @@ def clear_fake():
 
 if __name__ == "__main__":
     if "--clear" in sys.argv:
-        print(f"Removed {clear_fake()} fake companies and all their jobs.")
+        print(f"Removed {clear_fake()} fake accounts (companies with their jobs, and seekers).")
+    elif "seekers" in sys.argv:
+        n = int(next((a for a in sys.argv[1:] if a.isdigit()), 30))
+        print(f"Added {add_fake_seekers(n)} fake seekers with swipe history.")
     else:
         n = int(next((a for a in sys.argv[1:] if a.isdigit()), 60))
         print(f"Added {add_fake_jobs(n)} fake jobs across {len(COMPANIES)} fake companies.")

@@ -63,3 +63,15 @@ def to_int(value, low=0, high=10_000_000):
     except (TypeError, ValueError):
         return None
     return n if low <= n <= high else None
+
+
+def timeago(when, now=None):
+    """'5m ago', '3h ago', '2d ago' for a UTC datetime."""
+    if not when:
+        return "never"
+    from datetime import datetime
+    secs = max(0, ((now or datetime.utcnow()) - when).total_seconds())
+    for size, unit in ((86400, "d"), (3600, "h"), (60, "m")):
+        if secs >= size:
+            return f"{int(secs // size)}{unit} ago"
+    return "just now"

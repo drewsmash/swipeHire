@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% block title %}Admin jobs{% endblock %}
+{% block search %}{{ ui.search(url_for('admin.jobs'), q, 'Search title, company or location') }}{% endblock %}
+{% block heading %}Admin · Jobs ({{ jobs|length }}{{ '+' if jobs|length == 300 }}){% endblock %}
+{% block content %}
+<div class="tbl-wrap">
+<table class="tbl">
+  <thead><tr><th>Job</th><th>Type</th><th>Pay</th><th class="num">Seen</th><th class="num">Right</th><th class="num">Matched</th><th>Posted</th></tr></thead>
+  <tbody>
+  {% for j in jobs %}
+    <tr class="{{ 'closed' if not j.is_open }}">
+      <td><b>{{ j.title }}</b>{% if not j.is_open %} <span class="chip">Closed</span>{% endif %}<br>
+        <small class="muted">{{ j.company }} · {{ j.location }}</small></td>
+      <td><small>{{ j.job_type|label }}<br>{{ j.schedule|label }}</small></td>
+      <td><small>{{ j|pay }}</small></td>
+      <td class="num">{{ j.seen }}</td><td class="num">{{ j.interested }}</td><td class="num">{{ j.matched }}</td>
+      <td><small>{{ j.created_at|ago }}</small></td>
+    </tr>
+  {% else %}<tr><td colspan="7" class="muted">No jobs found.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

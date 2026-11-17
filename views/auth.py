@@ -9,6 +9,7 @@ bp = Blueprint("auth", __name__)
 
 
 def start_session(user_id):
+    db.execute("UPDATE users SET last_login_at = UTC_TIMESTAMP() WHERE id = %s", (user_id,))
     token = session.get("csrf_token")
     session.clear()
     session["user_id"] = user_id
