@@ -3,6 +3,8 @@
 Docker:  docker compose up --build -d   then open http://localhost:8300
 Local:   python main.py (needs a MySQL server and a .env, see AGENTS.md)
 """
+import functools
+import hashlib
 import os
 import secrets
 
@@ -25,6 +27,26 @@ app.register_blueprint(admin.bp)
 app.add_template_filter(fmt_pay, "pay")
 app.add_template_filter(label, "label")
 app.add_template_filter(timeago, "ago")
+
+
+@functools.lru_cache(maxsize=64)
+def static_version(filename):
+    """Short content hash of a static file. Changes whenever the file changes."""
+    try:
+        with open(os.path.join(app.static_folder, filename), "rb") as f:
+            return hashlib.sha1(f.read()).hexdigest()[:10]
+    except OSError:
+        return None
+
+
+@app.url_defaults
+def bust_static_cache(endpoint, values):
+    """Add ?v=<hash> to every static URL. Cloudflare and browsers cache style.css/app.js
+    for hours; a new hash after each change means they always fetch the new file."""
+    if endpoint == "static" and "filename" in values and "v" not in values:
+        version = static_version(values["filename"])
+        if version:
+            values["v"] = version
 
 
 @app.before_request

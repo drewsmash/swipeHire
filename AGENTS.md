@@ -144,6 +144,10 @@ static/style.css     All styles; colors are CSS variables at the top (light them
 - **Docker health:** the `web` image has a HEALTHCHECK on `/health` (checks MySQL too),
   and `web` only starts after `db` is healthy. Logs are capped at 3 × 10 MB per container.
   The MySQL "Unable to load ... as time zone" warnings at first start are normal.
+- **Static file caching:** the public site (swipehire.whalenet.net) goes through Cloudflare,
+  which caches `/static/*` for ~4 hours. `main.py` adds `?v=<content hash>` to every
+  `url_for('static', ...)` link, so a changed CSS/JS file gets a new URL right away.
+  Always link static files with `url_for('static', filename=...)`, never a hard-coded path.
 - `.env` is git-ignored. Never commit it. `.env.example` is the template.
 - Keep `.sh`/`.py`/`.sql` files with LF line endings (`.gitattributes` handles it).
 - Commute distance is stored and shown to employers but not used for filtering
