@@ -1,0 +1,50 @@
+# SwipeHire: MySQL database + Flask website.
+#   cp .env.example .env    (then edit the passwords)
+#   docker compose up --build -d
+#   open http://localhost:8095
+#
+# Tables are created and demo data is seeded by init_db.py the first time the
+# web container starts against an empty database.
+# To start over with fresh demo data: docker compose down -v
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${DB_NAME:-swipehire}
+      MYSQL_USER: ${DB_USER:-swipehire_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # TCP only answers once the init phase is over and the real server is up.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-swipehire}
+      DB_USER: ${DB_USER:-swipehire_app}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-swipehire}
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8095}:8000"
+
+volumes:
+  mysql-data:
+  uploads:

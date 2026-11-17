@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% block title %}Matches{% endblock %}
+{% block search %}{{ ui.search(url_for('employer.matches'), q, 'Search your matches') }}{% endblock %}
+{% block heading %}Matches{% endblock %}
+{% block content %}
+<ul class="match-list">
+  {% for m in matches %}
+  <li>
+    <details>
+      <summary>
+        <span class="m-name">{{ m.full_name }}</span>
+        <span class="m-sub">{{ m.job_title }}{% if m.preferred_title %} · wants {{ m.preferred_title }}{% endif %}</span>
+      </summary>
+      <div class="m-body">
+        <p><b>Phone:</b> {{ m.phone or '—' }}<br>
+           <b>Email:</b> {% if m.contact_email %}<a href="mailto:{{ m.contact_email }}">{{ m.contact_email }}</a>{% else %}—{% endif %}</p>
+        {% if m.certifications %}<p><b>Certifications:</b> {{ m.certifications }}</p>{% endif %}
+        {% if m.about %}<p>{{ m.about }}</p>{% endif %}
+        {% if m.resume_file %}<p><a href="{{ url_for('files.serve', kind='resume', seeker_id=m.user_id) }}" target="_blank">Resume: {{ m.resume_name }}</a></p>{% endif %}
+        <p class="muted">Matched {{ m.matched_at.strftime('%b %d, %Y') }}</p>
+      </div>
+    </details>
+  </li>
+  {% endfor %}
+</ul>
+<p class="end-note">
+  {% if q and not matches %}No matches for “{{ q }}”.
+  {% elif not matches %}No matches yet. Swipe right on applicants to match.
+  {% else %}You reached the end of your matches, keep swiping to get more!{% endif %}
+</p>
+<p class="center"><a class="btn" href="{{ url_for('employer.applicants') }}">Review applicants</a></p>
+{% endblock %}

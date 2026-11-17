@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% block title %}Applicants{% endblock %}
+{% block search %}{{ ui.search(url_for('employer.applicants'), q, 'Search name, title or certification', {'job': job_filter} if job_filter else {}) }}{% endblock %}
+{% block heading %}Applicants · {{ company.name }}{% endblock %}
+{% block main_class %}swipe-page{% endblock %}
+{% block content %}
+{% if jobs|length > 1 %}
+<form class="filter-row" method="get">
+  <input type="hidden" name="q" value="{{ q }}">
+  <label class="inline">Job
+    <select name="job" onchange="this.form.submit()">
+      <option value="">All jobs</option>
+      {% for j in jobs %}<option value="{{ j.id }}" {{ 'selected' if job_filter == j.id }}>{{ j.title }}</option>{% endfor %}
+    </select>
+  </label>
+  <noscript><button class="btn small">Filter</button></noscript>
+</form>
+{% endif %}
+
+<div class="stack" data-stack data-match-toast>
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5M16 4.5a3.5 3.5 0 0 1 0 7M18.5 15c1.6.6 2.7 2.3 3 5"/></svg>
+    <h2>No applicants waiting</h2>
+    <p class="muted">Applicants show up here after they swipe right on one of your jobs.</p>
+    <a class="btn" href="{{ url_for('employer.applicants') }}">Check again</a>
+    <a href="{{ url_for('employer.job_new') }}">Post another job</a>
+  </div>
+  {% for a in cards %}
+  <article class="card applicant{{ " top" if loop.first }}" data-depth="{{ [loop.index0, 3]|min }}" style="z-index: {{ 100 - loop.index }}"
+           data-action="{{ url_for('employer.swipe', job_id=a.job_id, seeker_id=a.user_id) }}" data-name="{{ a.full_name }}">
+    <div class="stamp like-stamp">MATCH</div>
+    <div class="stamp pass-stamp">PASS</div>
+    <header class="applicant-head">
+      {% if a.photo_file %}
+        <img class="photo" src="{{ url_for('files.serve', kind='photo', seeker_id=a.user_id) }}" alt="">
+      {% else %}
+        <div class="photo placeholder">{{ a.full_name[:1] }}</div>
+      {% endif %}
+      <div>
+        <h2>{{ a.full_name }}</h2>
+        <div class="company">{{ a.preferred_title or 'Open to opportunities' }}</div>
+      </div>
+    </header>
+    <p class="applied">Interested in <b>{{ a.job_title }}</b></p>
+    {% if a.about %}<section><h3>About</h3><p>{{ a.about }}</p></section>{% endif %}
+    <section><h3>Certifications</h3><p>{{ a.certifications or 'None listed' }}</p></section>
+    <section><h3>Looking for</h3>
+      <div class="chips">
+        <span class="chip">{{ a.job_type|label }}{% if a.job_type == 'any' %} type{% endif %}</span>
+        <span class="chip">{{ a.schedule|label }}{% if a.schedule == 'any' %} schedule{% endif %}</span>
+        {% if a.min_compensation %}<span class="chip">${{ '{:,}'.format(a.min_compensation) }}+ / yr</span>{% endif %}
+        {% if a.commute_miles %}<span class="chip">≤ {{ a.commute_miles }} mi commute</span>{% endif %}
+      </div>
+    </section>
+    <section><h3>Resume</h3>
+      {% if a.resume_file %}<p><a href="{{ url_for('files.serve', kind='resume', seeker_id=a.user_id) }}" target="_blank">{{ a.resume_name }}</a></p>
+      {% else %}<p class="muted">No resume uploaded</p>{% endif %}
+    </section>
+    <p class="muted small">Contact details unlock when you match.</p>
+  </article>
+  {% endfor %}
+</div>
+
+{% if cards %}
+<div class="actions" data-actions>
+  {{ ui.swipe_buttons(url_for('employer.swipe', job_id=cards[0].job_id, seeker_id=cards[0].user_id), 'Pass', 'Match') }}
+</div>
+<p class="hint muted">Swipe right or tap ✓ to match. Swipe left or tap ✕ to pass.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Post a job' if new else 'Edit job' }}{% endblock %}
+{% block heading %}{{ 'Post a job' if new else 'Edit job' }}{% endblock %}
+{% block content %}
+<form method="post" class="form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Job title <input name="title" value="{{ job.title or '' }}" required maxlength="120"></label>
+  <label>Location <input name="location" value="{{ job.location or '' }}" maxlength="120" placeholder="e.g. Miami, FL or Remote (US)"></label>
+  <div class="two">
+    <label>Job type
+      <select name="job_type">
+        {% for v, t in [('in_person','In person'), ('hybrid','Hybrid'), ('remote','Remote')] %}
+          <option value="{{ v }}" {{ 'selected' if job.job_type == v }}>{{ t }}</option>{% endfor %}
+      </select></label>
+    <label>Schedule
+      <select name="schedule">
+        {% for v, t in [('full_time','Full time'), ('part_time','Part time')] %}
+          <option value="{{ v }}" {{ 'selected' if job.schedule == v }}>{{ t }}</option>{% endfor %}
+      </select></label>
+  </div>
+  <label>Responsibilities <small class="muted">one per line</small>
+    <textarea name="responsibilities" rows="4" required>{{ job.responsibilities or '' }}</textarea></label>
+  <label>Requirements <small class="muted">one per line</small>
+    <textarea name="requirements" rows="4" required>{{ job.requirements or '' }}</textarea></label>
+  <fieldset>
+    <legend>Compensation</legend>
+    <div class="three">
+      <label>Min $ <input type="number" name="pay_min" min="0" value="{{ job.pay_min if job.pay_min is not none else '' }}" required></label>
+      <label>Max $ <input type="number" name="pay_max" min="0" value="{{ job.pay_max if job.pay_max is not none else '' }}" required></label>
+      <label>Per
+        <select name="pay_period">
+          <option value="year" {{ 'selected' if job.pay_period == 'year' }}>year</option>
+          <option value="hour" {{ 'selected' if job.pay_period == 'hour' }}>hour</option>
+        </select></label>
+    </div>
+  </fieldset>
+  <button class="btn primary" type="submit">{{ 'Post job' if new else 'Save changes' }}</button>
+  <a class="center" href="{{ url_for('employer.jobs') }}">Cancel</a>
+</form>
+{% endblock %}

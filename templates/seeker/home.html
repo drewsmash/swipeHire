@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% block title %}Homepage{% endblock %}
+{% block search %}{{ ui.search(url_for('seeker.home'), q, 'Search job title, company or keyword', {'all': '1'} if show_all else {}) }}{% endblock %}
+{% block heading %}Homepage{% endblock %}
+{% block main_class %}swipe-page{% endblock %}
+{% block content %}
+<div class="filter-row">
+  {% if filters %}
+    <span class="muted">Filtered by profile:</span>
+    {% for f in filters %}<span class="chip">{{ f|label }}</span>{% endfor %}
+    <a href="{{ url_for('seeker.home', q=q, all=1) }}">Show all</a>
+  {% elif show_all %}
+    <span class="muted">Showing all jobs.</span> <a href="{{ url_for('seeker.home', q=q) }}">Use my profile filters</a>
+  {% endif %}
+  {% if q %}<span class="chip">“{{ q }}”</span> <a href="{{ url_for('seeker.home', all=1 if show_all else None) }}">Clear</a>{% endif %}
+</div>
+
+<div class="stack" data-stack>
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+    <h2>You're all caught up</h2>
+    <p class="muted">{% if q %}No more jobs match “{{ q }}”.{% elif filters %}No more jobs match your profile filters.{% else %}You've seen every open job.{% endif %}</p>
+    <a class="btn" href="{{ url_for('seeker.home', q=q, all=1 if show_all else None) }}">Check again</a>
+    {% if filters %}<a href="{{ url_for('seeker.home', q=q, all=1) }}">Show all jobs</a>{% endif %}
+    <a href="{{ url_for('seeker.matches') }}">See your matches</a>
+  </div>
+  {% for j in jobs %}
+  <article class="card{{ " top" if loop.first }}" data-depth="{{ [loop.index0, 3]|min }}" style="z-index: {{ 100 - loop.index }}"
+           data-action="{{ url_for('seeker.swipe', job_id=j.id) }}" data-name="{{ j.company }}">
+    <div class="stamp like-stamp">INTERESTED</div>
+    <div class="stamp pass-stamp">PASS</div>
+    <header>
+      <h2>{{ j.title }}</h2>
+      <div class="company">{{ j.company }}</div>
+      <div class="chips">
+        <span class="chip">{{ j.job_type|label }}</span>
+        <span class="chip">{{ j.schedule|label }}</span>
+        {% if j.location %}<span class="chip">{{ j.location }}</span>{% endif %}
+      </div>
+    </header>
+    <section><h3>Responsibilities</h3>{{ ui.lines(j.responsibilities) }}</section>
+    <section><h3>Requirements</h3>{{ ui.lines(j.requirements) }}</section>
+    <section><h3>Compensation</h3><p class="pay">{{ j|pay }}</p></section>
+  </article>
+  {% endfor %}
+</div>
+
+{% if jobs %}
+<div class="actions" data-actions>
+  {{ ui.swipe_buttons(url_for('seeker.swipe', job_id=jobs[0].id, q=q), 'Pass', 'Interested') }}
+</div>
+<p class="hint muted">Swipe right or tap ✓ to send your profile. Swipe left or tap ✕ to pass.</p>
+{% endif %}
+{% endblock %}

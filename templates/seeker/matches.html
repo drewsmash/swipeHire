@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% block title %}Matches{% endblock %}
+{% block search %}{{ ui.search(url_for('seeker.matches'), q, 'Search your matches') }}{% endblock %}
+{% block heading %}Matches{% endblock %}
+{% block content %}
+<ul class="match-list">
+  {% for m in matches %}
+  <li>
+    <details>
+      <summary>
+        <span class="m-name">{{ m.company }}</span>
+        <span class="m-sub">{{ m.title }} · {{ m|pay }}</span>
+      </summary>
+      <div class="m-body">
+        <div class="chips"><span class="chip">{{ m.job_type|label }}</span><span class="chip">{{ m.schedule|label }}</span>
+          {% if m.location %}<span class="chip">{{ m.location }}</span>{% endif %}</div>
+        <h3>Responsibilities</h3>{{ ui.lines(m.responsibilities) }}
+        <h3>Requirements</h3>{{ ui.lines(m.requirements) }}
+        <p><b>Contact:</b> <a href="mailto:{{ m.company_email }}">{{ m.company_email }}</a>
+          {% if m.website %}· {{ m.website }}{% endif %}</p>
+        <p class="muted">Matched {{ m.matched_at.strftime('%b %d, %Y') }}</p>
+      </div>
+    </details>
+  </li>
+  {% endfor %}
+</ul>
+<p class="end-note">
+  {% if q and not matches %}No matches for “{{ q }}”.
+  {% elif not matches %}No matches yet. Keep swiping to get more!
+  {% else %}You reached the end of your matches, keep swiping to get more!{% endif %}
+  {% if pending %}<br><small>{{ pending }} application{{ 's' if pending != 1 }} waiting for the employer to swipe.</small>{% endif %}
+</p>
+<p class="center"><a class="btn" href="{{ url_for('seeker.home') }}">Keep swiping</a></p>
+{% endblock %}

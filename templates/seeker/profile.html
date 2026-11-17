@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block heading %}Profile{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="form profile-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <div class="photo-row">
+    {% if p.photo_file %}
+      <img class="photo" src="{{ url_for('files.serve', kind='photo', seeker_id=me.id) }}" alt="Profile picture">
+    {% else %}
+      <div class="photo placeholder">{{ (p.full_name or '?')[:1] }}</div>
+    {% endif %}
+    <label class="file">Profile picture
+      <input type="file" name="photo" accept=".png,.jpg,.jpeg,.webp,.gif,image/*">
+    </label>
+  </div>
+
+  <fieldset>
+    <legend>Contact</legend>
+    <label>Full name <input name="full_name" value="{{ p.full_name }}" required maxlength="120"></label>
+    <label>Phone number <input type="tel" name="phone" value="{{ p.phone }}" maxlength="40"></label>
+    <label>Email <input type="email" name="contact_email" value="{{ p.contact_email }}" maxlength="255"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Resume</legend>
+    <label class="file">Attach resume <small class="muted">pdf, doc, docx</small>
+      <input type="file" name="resume" accept=".pdf,.doc,.docx">
+    </label>
+    {% if p.resume_file %}
+      <p class="muted">Current: <a href="{{ url_for('files.serve', kind='resume', seeker_id=me.id) }}" target="_blank">{{ p.resume_name }}</a></p>
+    {% endif %}
+  </fieldset>
+
+  <fieldset>
+    <legend>What jobs you'll see</legend>
+    <label>Preferred job title <input name="preferred_title" value="{{ p.preferred_title }}" maxlength="120"
+           placeholder="e.g. Software Engineer"></label>
+    <label>Compensation minimum ($ per year)
+      <input type="number" name="min_compensation" min="0" step="1000" value="{{ p.min_compensation or '' }}"
+             placeholder="Leave blank for any"></label>
+    <label>Job type
+      <select name="job_type">
+        {% for v, t in [('any','Any'), ('remote','Remote'), ('hybrid','Hybrid'), ('in_person','In person')] %}
+          <option value="{{ v }}" {{ 'selected' if p.job_type == v }}>{{ t }}</option>
+        {% endfor %}
+      </select></label>
+    <label>Commute distance, if applicable (miles)
+      <input type="number" name="commute_miles" min="0" max="500" value="{{ p.commute_miles if p.commute_miles is not none else '' }}"></label>
+    <div class="radio-row" role="radiogroup" aria-label="Schedule">
+      {% for v, t in [('full_time','Full time'), ('part_time','Part time'), ('any','Either')] %}
+        <label class="radio"><input type="radio" name="schedule" value="{{ v }}" {{ 'checked' if p.schedule == v }}> {{ t }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>About you</legend>
+    <label>Certifications <input name="certifications" value="{{ p.certifications or '' }}"
+           placeholder="e.g. CompTIA Security+, AWS Cloud Practitioner"></label>
+    <label>Short bio <textarea name="about" rows="3" placeholder="What employers see on your card">{{ p.about or '' }}</textarea></label>
+  </fieldset>
+
+  <button class="btn primary" type="submit">Save profile</button>
+</form>
+{% endblock %}

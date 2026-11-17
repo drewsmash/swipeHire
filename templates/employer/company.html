@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Company{% endblock %}
+{% block heading %}Company profile{% endblock %}
+{% block content %}
+<form method="post" class="form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Company name <input name="name" value="{{ c.name }}" required maxlength="120"></label>
+  <label>About the company <textarea name="description" rows="4">{{ c.description or '' }}</textarea></label>
+  <label>Recruiting email <small class="muted">shown to seekers you match with</small>
+    <input type="email" name="contact_email" value="{{ c.contact_email }}" maxlength="255"></label>
+  <label>Website / careers page <input name="website" value="{{ c.website }}" maxlength="255"></label>
+  <button class="btn primary" type="submit">Save</button>
+</form>
+{% endblock %}

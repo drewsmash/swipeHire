@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block main_class %}auth{% endblock %}
+{% block content %}
+<div class="hero">
+  <img src="{{ url_for('static', filename='logo.svg') }}" alt="" width="64" height="64">
+  <h1>SwipeHire</h1>
+  <p>One profile. Swipe right on jobs you like. Match when they like you back.</p>
+</div>
+<form method="post" class="panel form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Email <input type="email" name="email" required autocomplete="username" autofocus></label>
+  <label>Password <input type="password" name="password" required autocomplete="current-password"></label>
+  <button class="btn primary" type="submit">Log in</button>
+</form>
+<p class="center muted">New here?
+  <a href="{{ url_for('auth.signup', role='seeker') }}">I'm looking for a job</a> ·
+  <a href="{{ url_for('auth.signup', role='employer') }}">I'm hiring</a>
+</p>
+<details class="panel demo">
+  <summary>Demo accounts</summary>
+  <p class="muted">Seeded on first start. Password is the <code>DEMO_PASSWORD</code> from <code>.env</code>.</p>
+  <ul>
+    <li><b>seeker@swipehire.test</b> — job seeker (Alex)</li>
+    <li><b>google@swipehire.test</b> — employer with applicants waiting</li>
+  </ul>
+</details>
+{% endblock %}

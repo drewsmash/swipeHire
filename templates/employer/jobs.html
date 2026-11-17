@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}My jobs{% endblock %}
+{% block heading %}Jobs · {{ company.name }}{% endblock %}
+{% block content %}
+<p><a class="btn primary block" href="{{ url_for('employer.job_new') }}">+ Post a job</a></p>
+<ul class="job-list">
+  {% for j in jobs %}
+  <li class="{{ 'closed' if not j.is_open }}">
+    <div class="jl-main">
+      <div class="m-name">{{ j.title }} {% if not j.is_open %}<span class="chip">Closed</span>{% endif %}</div>
+      <div class="m-sub">{{ j.job_type|label }} · {{ j.schedule|label }} · {{ j|pay }}</div>
+      <div class="m-sub">{{ j.interested }} interested · {{ j.matched }} matched</div>
+    </div>
+    <div class="jl-actions">
+      {% if j.interested > j.matched %}<a href="{{ url_for('employer.applicants', job=j.id) }}">Review</a>{% endif %}
+      <a href="{{ url_for('employer.job_edit', job_id=j.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('employer.job_toggle', job_id=j.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="linkish">{{ 'Close' if j.is_open else 'Reopen' }}</button>
+      </form>
+    </div>
+  </li>
+  {% else %}
+  <li class="muted">No jobs yet. Post one so seekers can start swiping.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
