@@ -14,6 +14,7 @@ from pathlib import Path
 from werkzeug.security import generate_password_hash
 
 import db
+import fake_jobs
 
 SCHEMA = Path(__file__).with_name("sql") / "schema.sql"
 
@@ -175,6 +176,8 @@ def seed():
             db.execute("INSERT INTO employer_swipes (job_id, seeker_id, liked) VALUES (%s,%s,%s)",
                        (jid, sid, e_liked))
     print(f"Seeded {len(COMPANIES)} companies, {len(JOBS)} jobs, {len(SEEKERS)} seekers.")
+    # Extra made-up listings for testing (see fake_jobs.py). Fixed seed = same jobs every reset.
+    print(f"Added {fake_jobs.add_fake_jobs(60, seed=15)} fake test jobs.")
 
 
 if __name__ == "__main__":

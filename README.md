@@ -8,7 +8,7 @@ cp .env.example .env     # change the passwords
 docker compose up --build -d
 ```
 
-Open http://localhost:8095 and log in with `seeker@swipehire.test` or
+Open http://localhost:8300 and log in with `seeker@swipehire.test` or
 `google@swipehire.test` (password = `DEMO_PASSWORD` in `.env`, default `swipehire`).
 
 Full details – file map, data model, conventions, TODO list – are in [AGENTS.md](AGENTS.md).

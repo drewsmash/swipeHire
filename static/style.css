@@ -14,19 +14,7 @@
   --radius: 18px;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0d0f17;
-    --surface: #181b27;
-    --surface-2: #1f2331;
-    --text: #eceef6;
-    --muted: #9aa0b8;
-    --line: #2b3042;
-    --brand: #7c74ff;
-    --shadow: 0 10px 30px rgba(0, 0, 0, .45);
-    color-scheme: dark;
-  }
-}
+/* Light theme only (dark mode removed on request). */
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -94,12 +82,15 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
 }
 .page-title:empty { display: none; }
 
+/* Floats over the page so it never pushes the swipe buttons off screen. */
 .flash {
-  margin: 10px 16px 0; padding: 10px 14px; border-radius: 12px;
+  position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 400;
+  width: min(408px, calc(100vw - 32px)); box-shadow: var(--shadow);
+  padding: 10px 14px; border-radius: 12px;
   background: color-mix(in srgb, var(--brand) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
   transition: opacity .4s, max-height .4s, margin .4s, padding .4s; max-height: 120px; overflow: hidden;
 }
-.flash.hide { opacity: 0; max-height: 0; margin-top: 0; padding-top: 0; padding-bottom: 0; border-width: 0; }
+.flash.hide { opacity: 0; pointer-events: none; }
 
 .content { flex: 1; padding: 14px 16px 24px; }
 
@@ -148,6 +139,10 @@ label.inline { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
 .hero h1 { font-size: 1.7rem; }
 .hero p { color: var(--muted); margin: 0; max-width: 30ch; }
 .demo summary { cursor: pointer; font-weight: 600; }
+.guest { display: grid; gap: 10px; text-align: center; }
+.guest-title { font-weight: 700; }
+.guest-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.guest-buttons .btn { padding: 11px 8px; }
 .demo ul { padding-left: 18px; margin: 6px 0 0; }
 .segmented { display: flex; background: var(--surface-2); border-radius: 12px; padding: 4px; border: 1px solid var(--line); }
 .segmented a { flex: 1; text-align: center; padding: 9px; border-radius: 9px; text-decoration: none; color: var(--muted); font-weight: 600; }

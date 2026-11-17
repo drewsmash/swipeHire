@@ -32,6 +32,22 @@ def login():
     return render_template("login.html")
 
 
+# One-click guest login into the seeded demo accounts (see init_db.py).
+GUEST_ACCOUNTS = {"seeker": "seeker@swipehire.test", "employer": "google@swipehire.test"}
+
+
+@bp.post("/guest")
+def guest():
+    email = GUEST_ACCOUNTS.get(request.form.get("role"))
+    user = db.fetch_one("SELECT id FROM users WHERE email = %s", (email,)) if email else None
+    if not user:
+        flash("Guest accounts are not set up. Run: docker compose down -v && docker compose up -d")
+        return redirect(url_for("auth.login"))
+    start_session(user["id"])
+    flash("You're browsing as a guest using a shared test account.")
+    return redirect(url_for("home"))
+
+
 @bp.route("/signup", methods=["GET", "POST"])
 def signup():
     role = request.values.get("role", "seeker")

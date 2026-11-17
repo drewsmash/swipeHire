@@ -1,6 +1,6 @@
 """SwipeHire web application.
 
-Docker:  docker compose up --build -d   then open http://localhost:8095
+Docker:  docker compose up --build -d   then open http://localhost:8300
 Local:   python main.py (needs a MySQL server and a .env, see AGENTS.md)
 """
 import os
