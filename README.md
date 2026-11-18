@@ -184,7 +184,7 @@ docker compose up --build -d
 Then open **http://localhost:8300**.
 
 The first start adds demo data: 72 jobs, 26 employers, 35 seekers and about 400 swipes.
-The demo accounts below use the password from `DEMO_PASSWORD` in `.env` (default `swipehire`):
+The demo accounts below use the password from `DEMO_PASSWORD` in `.env` 
 
 | Email | What you'll see |
 |---|---|
