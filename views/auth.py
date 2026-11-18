@@ -4,6 +4,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import db
+from views import guests
 
 bp = Blueprint("auth", __name__)
 
@@ -33,19 +34,18 @@ def login():
     return render_template("login.html")
 
 
-# One-click guest login into the seeded demo accounts (see init_db.py).
-GUEST_ACCOUNTS = {"seeker": "seeker@swipehire.test", "employer": "google@swipehire.test"}
-
-
 @bp.post("/guest")
 def guest():
-    email = GUEST_ACCOUNTS.get(request.form.get("role"))
-    user = db.fetch_one("SELECT id FROM users WHERE email = %s", (email,)) if email else None
-    if not user:
-        flash("Guest accounts are not set up. Run: docker compose down -v && docker compose up -d")
+    """Make a brand-new throwaway test account and log into it (see views/guests.py)."""
+    role = request.form.get("role")
+    if role not in ("seeker", "employer"):
         return redirect(url_for("auth.login"))
-    start_session(user["id"])
-    flash("You're browsing as a guest using a shared test account.")
+    guests.cleanup_old_guests()
+    uid = guests.create_seeker() if role == "seeker" else guests.create_employer()
+    start_session(uid)
+    flash("New guest test account made just for you. It has its own swipes and is deleted after a day."
+          if role == "seeker" else
+          "New guest company made just for you, with 3 jobs and applicants waiting. Deleted after a day.")
     return redirect(url_for("home"))
 
 

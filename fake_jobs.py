@@ -207,34 +207,45 @@ def add_fake_jobs(count=60, seed=None):
     rows = []
     now = dt.datetime.utcnow()
     for _ in range(count):
-        title, cat, resp, req, lo, hi, period, schedules = rng.choice(ROLES)
-        level = rng.random()
-        if level > 0.85 and period == "year":
-            title = "Senior " + title.replace("Junior ", "")
-            lo, hi = lo * 1.4, hi * 1.5
-        scale = rng.uniform(0.92, 1.1)
-        pay_min = round_pay(lo * scale, period)
-        pay_max = max(pay_min, round_pay(hi * scale, period))
-        if cat in REMOTE_OK:
-            job_type = rng.choices(["remote", "hybrid", "in_person"], weights=[3, 3, 2])[0]
-        else:
-            job_type = "in_person"
-        location = "Remote (US)" if job_type == "remote" else rng.choice(CITIES)
-        # Cards only have responsibilities / requirements / pay, so a perk rides
-        # along as the last responsibilities bullet.
-        responsibilities = rng.sample(resp, min(len(resp), rng.randint(3, 4))) + [f"Perk: {rng.choice(PERKS)}"]
-        requirements = rng.sample(req, min(len(req), rng.randint(2, 4)))
-        rows.append((
-            rng.choice([cid for cid, cats in company_ids if cat in cats]), title, location, job_type, rng.choice(schedules),
-            "\n".join(responsibilities), "\n".join(requirements), pay_min, pay_max, period,
-            now - dt.timedelta(days=rng.uniform(0, 21)),  # posted some time in the last 3 weeks
-        ))
-    db.transaction([(
-        """INSERT INTO jobs (company_id, title, location, job_type, schedule, responsibilities,
-                             requirements, pay_min, pay_max, pay_period, created_at)
-           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-        r) for r in rows])
+        job = make_job(rng)
+        company_id = rng.choice([cid for cid, cats in company_ids if job["category"] in cats])
+        rows.append(job_insert(company_id, job, now - dt.timedelta(days=rng.uniform(0, 21))))
+    db.transaction(rows)
     return len(rows)
+
+
+def make_job(rng, role=None):
+    """Random job fields (no company). Pass role=a ROLES entry to pick the kind of job."""
+    title, cat, resp, req, lo, hi, period, schedules = role or rng.choice(ROLES)
+    if rng.random() > 0.85 and period == "year":
+        title = "Senior " + title.replace("Junior ", "")
+        lo, hi = lo * 1.4, hi * 1.5
+    scale = rng.uniform(0.92, 1.1)
+    pay_min = round_pay(lo * scale, period)
+    pay_max = max(pay_min, round_pay(hi * scale, period))
+    if cat in REMOTE_OK:
+        job_type = rng.choices(["remote", "hybrid", "in_person"], weights=[3, 3, 2])[0]
+    else:
+        job_type = "in_person"
+    # Cards only have responsibilities / requirements / pay, so a perk rides
+    # along as the last responsibilities bullet.
+    responsibilities = rng.sample(resp, min(len(resp), rng.randint(3, 4))) + [f"Perk: {rng.choice(PERKS)}"]
+    return {
+        "category": cat, "title": title, "job_type": job_type, "schedule": rng.choice(schedules),
+        "location": "Remote (US)" if job_type == "remote" else rng.choice(CITIES),
+        "responsibilities": "\n".join(responsibilities),
+        "requirements": "\n".join(rng.sample(req, min(len(req), rng.randint(2, 4)))),
+        "pay_min": pay_min, "pay_max": pay_max, "pay_period": period,
+    }
+
+
+def job_insert(company_id, job, created_at):
+    """(sql, params) that inserts a make_job() result for a company."""
+    return ("""INSERT INTO jobs (company_id, title, location, job_type, schedule, responsibilities,
+                                requirements, pay_min, pay_max, pay_period, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            (company_id, job["title"], job["location"], job["job_type"], job["schedule"], job["responsibilities"],
+             job["requirements"], job["pay_min"], job["pay_max"], job["pay_period"], created_at))
 
 
 FIRST = ["Ana", "Ben", "Carla", "Diego", "Emma", "Femi", "Grace", "Hector", "Isla", "Jamal", "Kayla", "Luis",

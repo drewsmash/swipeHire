@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request
 
 import db
+from views import guests
 from views.common import like_param, login_required
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -116,6 +117,9 @@ def users():
     if role in ("seeker", "employer", "admin"):
         sql += " AND u.role = %s"
         params.append(role)
+    elif role == "guest":
+        sql += " AND u.email LIKE %s"
+        params.append(f"%@{guests.GUEST_DOMAIN}")
     if q:
         sql += " AND (u.email LIKE %s OR p.full_name LIKE %s OR c.name LIKE %s OR p.preferred_title LIKE %s)"
         params += [like_param(q)] * 4

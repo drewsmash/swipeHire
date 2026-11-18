@@ -18,7 +18,7 @@
     <details class="menu">
       <summary>Menu</summary>
       <div class="menu-pop">
-        <div class="menu-who">{{ me.email }}<br><small>{{ {'employer': 'Employer', 'admin': 'Admin', 'seeker': 'Job seeker'}[me.role] }}</small></div>
+        <div class="menu-who">{{ me.email }}<br><small>{{ {'employer': 'Employer', 'admin': 'Admin', 'seeker': 'Job seeker'}[me.role] }}{{ ' · guest test account' if is_guest }}</small></div>
         {% if me.role == 'seeker' %}
           <a href="{{ url_for('seeker.home') }}">Homepage</a>
           <a href="{{ url_for('seeker.profile') }}">Profile</a>
@@ -32,6 +32,12 @@
           <a href="{{ url_for('employer.jobs') }}">My jobs</a>
           <a href="{{ url_for('employer.job_new') }}">Post a job</a>
           <a href="{{ url_for('employer.matches') }}">Matches</a>
+        {% endif %}
+        {% if is_guest %}
+        <form method="post" action="{{ url_for('auth.guest') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" name="role" value="{{ me.role }}">Start over as a new guest</button>
+        </form>
         {% endif %}
         <form method="post" action="{{ url_for('auth.logout') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

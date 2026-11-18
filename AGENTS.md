@@ -63,10 +63,25 @@ industry. Logins are `<companyname>@fake.swipehire.test` and
 `<first>.<last><n>@fake.swipehire.test`, same demo password.
 Fresh start totals: 72 jobs, 35 seekers, 26 employers, ~400 swipes, ~35 matches.
 
-**Guest mode:** the login page has "Guest job seeker" and "Guest employer"
-buttons (`POST /guest`). They log straight into `seeker@swipehire.test` /
-`google@swipehire.test` with no password. These are shared accounts, so
-swipes by one guest are seen by the next; run `docker compose down -v` to reset.
+**Guest mode (for testers):** the login page has "Guest job seeker" and "Guest
+employer" buttons (`POST /guest`, code in `views/guests.py`). **Every click creates
+a brand-new throwaway account**, so several people can test at the same time and
+logging out + clicking guest again never lands you back in a used-up account.
+Not cookie based – the account lives in the database; the browser session just
+logs you into it.
+- Guest seeker: random name + preferred title, **no profile filters** (sees every
+  job), 2 starter matches and 1 pending application.
+- Guest employer: its own made-up company "... (guest)" with 3 jobs in one industry,
+  ~8 applicants waiting (demo/fake seekers) and 1 starter match.
+- Emails are `guest-<random>@guest.swipehire.test` with a random hidden password.
+- Guests older than 24 hours are deleted automatically the next time anyone makes
+  a guest (cascades to their company, jobs and swipes). Admin → Users → Guests lists them.
+- **Out of cards?** The empty Homepage offers "Bring back N jobs I passed on"
+  (`POST /jobs/recycle`, works for every seeker; keeps right swipes and matches),
+  "Show all jobs (ignore my filters)", and for guests "Start over as a new guest".
+  Guests also have "Start over as a new guest" in the Menu.
+- The shared demo logins (`seeker@` / `google@swipehire.test`) still exist for
+  password login, but the guest buttons no longer use them.
 
 ## Stack
 
@@ -84,9 +99,10 @@ fake_jobs.py         Generates fake test job listings (also a CLI, see commands 
 init_db.py           Runs on container start: waits for MySQL, creates tables, seeds demo data (edit demo data here)
 sql/schema.sql       All tables (users, seeker_profiles, companies, jobs, seeker_swipes, employer_swipes)
 views/common.py      current_user(), @login_required(role), pay/label formatting, LIKE escaping
-views/auth.py        /login, /guest (one-click demo login), /signup?role=seeker|employer, /logout
+views/auth.py        /login, /guest (creates a new guest account), /signup?role=seeker|employer, /logout
 views/seeker.py      /home (job swipe), /jobs/<id>/swipe, /profile, /matches
 views/employer.py    /employer/applicants, /employer/jobs (+ new/edit/toggle), /employer/company, /employer/matches
+views/guests.py      Throwaway guest accounts: create seeker/employer, 24h cleanup
 views/recommend.py   Job recommendation algorithm (orders the Homepage cards, see below)
 views/admin.py       /admin (stats), /admin/users, /admin/jobs – read-only, admin role only
 views/files.py       Upload saving + /files/<resume|photo>/<seeker_id> with access check

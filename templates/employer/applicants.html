@@ -24,6 +24,12 @@
     <h2>No applicants waiting</h2>
     <p class="muted">Applicants show up here after they swipe right on one of your jobs.</p>
     <a class="btn" href="{{ url_for('employer.applicants') }}">Check again</a>
+    {% if is_guest %}
+    <form method="post" action="{{ url_for('auth.guest') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn primary" name="role" value="employer">Start over as a new guest company</button>
+    </form>
+    {% endif %}
     <a href="{{ url_for('employer.job_new') }}">Post another job</a>
   </div>
   {% for a in cards %}

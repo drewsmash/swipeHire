@@ -22,8 +22,21 @@
     <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
     <h2>You're all caught up</h2>
     <p class="muted">{% if q %}No more jobs match “{{ q }}”.{% elif filters %}No more jobs match your profile filters.{% else %}You've seen every open job.{% endif %}</p>
-    <a class="btn" href="{{ url_for('seeker.home', q=q, all=1 if show_all else None) }}">Check again</a>
-    {% if filters %}<a href="{{ url_for('seeker.home', q=q, all=1) }}">Show all jobs</a>{% endif %}
+    {% if passed %}
+    <form method="post" action="{{ url_for('seeker.recycle') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if show_all %}<input type="hidden" name="all" value="1">{% endif %}
+      <button class="btn primary">Bring back {{ passed }} job{{ 's' if passed != 1 }} I passed on</button>
+    </form>
+    {% endif %}
+    {% if filters %}<a class="btn" href="{{ url_for('seeker.home', q=q, all=1) }}">Show all jobs (ignore my filters)</a>{% endif %}
+    {% if is_guest %}
+    <form method="post" action="{{ url_for('auth.guest') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn" name="role" value="seeker">Start over as a new guest</button>
+    </form>
+    {% endif %}
+    <a href="{{ url_for('seeker.profile') }}">Change my filters</a>
     <a href="{{ url_for('seeker.matches') }}">See your matches</a>
   </div>
   {% for j in jobs %}

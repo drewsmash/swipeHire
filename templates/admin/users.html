@@ -5,7 +5,7 @@
 {% block heading %}Admin · Users ({{ users|length }}{{ '+' if users|length == 300 }}){% endblock %}
 {% block content %}
 <div class="segmented small-seg">
-  {% for v, t in [('', 'All'), ('seeker', 'Seekers'), ('employer', 'Employers'), ('admin', 'Admins')] %}
+  {% for v, t in [('', 'All'), ('seeker', 'Seekers'), ('employer', 'Employers'), ('admin', 'Admins'), ('guest', 'Guests')] %}
     <a href="{{ url_for('admin.users', role=v or None, q=q or None) }}" class="{{ 'on' if role == v }}">{{ t }}</a>
   {% endfor %}
 </div>

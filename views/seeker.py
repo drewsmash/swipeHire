@@ -61,8 +61,9 @@ def home():
            WHERE s.seeker_id = %s ORDER BY s.created_at DESC LIMIT %s""",
         (me["id"], recommend.HISTORY_LIMIT))
     jobs = recommend.rank(candidates, profile, history)
+    passed = sum(1 for h in history if not h["liked"])
     return render_template("seeker/home.html", jobs=jobs, q=q, filters=filters, show_all=show_all,
-                           learned_from=len(history))
+                           learned_from=len(history), passed=passed)
 
 
 @bp.post("/jobs/<int:job_id>/swipe")
@@ -84,6 +85,19 @@ def swipe(job_id):
         return jsonify(ok=True, message=message)
     flash(message)
     return redirect(url_for("seeker.home", q=request.args.get("q", "")))
+
+
+@bp.post("/jobs/recycle")
+@login_required("seeker")
+def recycle():
+    """Out of cards? Forget the jobs this seeker PASSED on so they come back.
+    Right swipes (and matches) are kept."""
+    me = current_user()
+    n = db.fetch_one("SELECT COUNT(*) AS n FROM seeker_swipes WHERE seeker_id = %s AND liked = 0", (me["id"],))["n"]
+    db.execute("DELETE FROM seeker_swipes WHERE seeker_id = %s AND liked = 0", (me["id"],))
+    flash(f"{n} job{'s' if n != 1 else ''} you passed on are back in your stack." if n else
+          "You haven't passed on any jobs yet.")
+    return redirect(url_for("seeker.home", all=1 if request.form.get("all") else None))
 
 
 @bp.route("/profile", methods=["GET", "POST"])

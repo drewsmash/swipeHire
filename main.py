@@ -11,7 +11,7 @@ import secrets
 from flask import Flask, abort, redirect, request, session, url_for
 
 import db
-from views import admin, auth, employer, files, seeker
+from views import admin, auth, employer, files, guests, seeker
 from views.common import current_user, fmt_pay, label, timeago
 
 app = Flask(__name__)
@@ -63,7 +63,8 @@ def check_csrf_token():
 def page_globals():
     if "csrf_token" not in session:
         session["csrf_token"] = secrets.token_hex(16)
-    return {"csrf_token": session["csrf_token"], "me": current_user()}
+    me = current_user()
+    return {"csrf_token": session["csrf_token"], "me": me, "is_guest": guests.is_guest(me)}
 
 
 @app.get("/")
