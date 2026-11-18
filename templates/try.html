@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ 'Try SwipeHire as an employer' if role == 'employer' else 'Try SwipeHire' }}</title>
+  {% if role == 'employer' %}
+    {% set og_title = 'Try SwipeHire as an employer – hire by swiping' %}
+    {% set og_desc = 'Get your own test company with jobs and applicants already waiting. No sign-up – tap and start swiping.' %}
+    {% set og_image = 'og-employer.png' %}
+  {% else %}
+    {% set og_title = 'Try SwipeHire – swipe right on your next job' %}
+    {% set og_desc = 'Tap to get your own test account and start swiping on jobs right away. No sign-up, nothing to fill in.' %}
+    {% set og_image = 'og-seeker.png' %}
+  {% endif %}
+  {% include "_meta.html" %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="splash-body">
+<main class="splash">
+  <img class="splash-logo" src="{{ url_for('static', filename='logo.svg') }}" alt="" width="88" height="88">
+  <h1>SwipeHire</h1>
+  <p class="splash-tag">{{ 'Hire by swiping. Match in minutes.' if role == 'employer' else 'Swipe right on your next job.' }}</p>
+
+  <div class="splash-status" role="status" aria-live="polite">
+    <div class="splash-bar"><span></span></div>
+    <p id="splash-msg">
+      {% if continuing %}Welcome back – opening your test account…
+      {% elif role == 'employer' %}Setting up your test company and applicants…
+      {% else %}Setting up your test account…{% endif %}
+    </p>
+  </div>
+
+  <ul class="splash-tips">
+    {% if role == 'employer' %}
+      <li><span class="tip like">✓</span> Swipe right on an applicant to match</li>
+      <li><span class="tip pass">✕</span> Swipe left to pass</li>
+      <li><span class="tip info">+</span> Post your own jobs from the Jobs tab</li>
+    {% else %}
+      <li><span class="tip like">✓</span> Swipe right to send your profile</li>
+      <li><span class="tip pass">✕</span> Swipe left to pass</li>
+      <li><span class="tip info">★</span> Matches appear when employers like you back</li>
+    {% endif %}
+  </ul>
+
+  {% if continuing %}
+    <a id="splash-go" class="btn splash-btn" href="{{ url_for('home') }}">Continue</a>
+    <form method="post" action="{{ url_for('auth.guest') }}" class="splash-alt">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="linkish" name="role" value="{{ role }}">Start fresh with a new test account instead</button>
+    </form>
+  {% else %}
+    <form id="splash-form" method="post" action="{{ url_for('auth.guest') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="role" value="{{ role }}">
+      <button class="btn splash-btn" type="submit">Start now</button>
+    </form>
+  {% endif %}
+  <p class="splash-foot">Test accounts are private to you and deleted after a day.
+    <a href="{{ url_for('try_it', role='seeker' if role == 'employer' else 'employer') }}">
+      Try as {{ 'a job seeker' if role == 'employer' else 'an employer' }} instead</a></p>
+</main>
+<script>
+  // The account is only created here, by the browser, never by a plain GET –
+  // so link-preview bots that fetch this page don't create junk accounts.
+  setTimeout(function () {
+    var form = document.getElementById("splash-form");
+    if (form) { form.submit(); return; }
+    var go = document.getElementById("splash-go");
+    if (go) location.replace(go.href);
+  }, 1600);
+</script>
+</body>
+</html>

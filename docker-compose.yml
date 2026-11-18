@@ -45,6 +45,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-swipehire}
+      PUBLIC_URL: ${PUBLIC_URL:-}
     volumes:
       - uploads:/app/uploads
     ports:

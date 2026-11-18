@@ -8,13 +8,26 @@ import hashlib
 import os
 import secrets
 
-from flask import Flask, abort, redirect, request, session, url_for
+from flask import Flask, abort, redirect, render_template, request, session, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import db
 from views import admin, auth, employer, files, guests, seeker
 from views.common import current_user, fmt_pay, label, timeago
 
 app = Flask(__name__)
+# Behind Cloudflare: trust X-Forwarded-Proto/Host so external URLs come out as https://<public host>.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+PUBLIC_URL = os.getenv("PUBLIC_URL", "").rstrip("/")
+
+
+def public_url(path=""):
+    """Absolute URL for link previews. Uses PUBLIC_URL from .env when set
+    (e.g. https://swipehire.whalenet.net), otherwise the address the request came in on."""
+    base = PUBLIC_URL or request.url_root.rstrip("/")
+    return base + (path if path.startswith("/") else "/" + path)
+
+
 app.secret_key = os.getenv("SECRET_KEY") or secrets.token_hex(32)
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB uploads (resume / photo)
 
@@ -64,7 +77,8 @@ def page_globals():
     if "csrf_token" not in session:
         session["csrf_token"] = secrets.token_hex(16)
     me = current_user()
-    return {"csrf_token": session["csrf_token"], "me": me, "is_guest": guests.is_guest(me)}
+    return {"csrf_token": session["csrf_token"], "me": me, "is_guest": guests.is_guest(me),
+            "public_url": public_url}
 
 
 @app.get("/")
@@ -77,6 +91,17 @@ def home():
     if user["role"] == "admin":
         return redirect(url_for("admin.stats"))
     return redirect(url_for("seeker.home"))
+
+
+@app.get("/try")
+@app.get("/try/<role>")
+def try_it(role="seeker"):
+    """Shareable link: splash page that drops the visitor straight into a NEW guest account.
+    GET only shows the page (safe for link-preview bots); its script then POSTs /guest."""
+    role = "employer" if role == "employer" else "seeker"
+    me = current_user()
+    continuing = bool(me) and guests.is_guest(me) and me["role"] == role
+    return render_template("try.html", role=role, continuing=continuing)
 
 
 @app.get("/health")

@@ -305,3 +305,32 @@ label.inline { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
 .role-admin { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
 .role-employer { color: #15803d; border-color: #bbf7d0; background: #f0fdf4; }
 .role-seeker { color: var(--brand); border-color: #c7d2fe; background: #eef2ff; }
+
+/* --- /try splash page (shareable guest link) --- */
+.splash-body { background: linear-gradient(160deg, #4f46e5 0%, #3730a3 100%); min-height: 100vh; min-height: 100dvh; color: #fff; }
+.splash { max-width: 420px; margin: 0 auto; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; gap: 14px;
+  padding: max(32px, env(safe-area-inset-top)) 24px max(28px, env(safe-area-inset-bottom)); }
+.splash-logo { border-radius: 22px; background: #fff; padding: 6px; box-shadow: 0 12px 40px rgba(10, 8, 60, .35);
+  animation: splash-pop .7s cubic-bezier(.2, 1.4, .4, 1) both; }
+.splash h1 { font-size: 2.2rem; letter-spacing: -.02em; animation: splash-up .5s .15s both; }
+.splash-tag { margin: -6px 0 6px; color: #e0e7ff; font-size: 1.1rem; animation: splash-up .5s .25s both; }
+.splash-status { width: 100%; animation: splash-up .5s .35s both; }
+.splash-bar { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, .25); overflow: hidden; }
+.splash-bar span { display: block; height: 100%; width: 0; background: #fff; border-radius: inherit;
+  animation: splash-fill 1.6s ease-in-out forwards; }
+#splash-msg { margin: 10px 0 0; color: #e0e7ff; font-size: .95rem; }
+.splash-tips { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 10px; text-align: left; width: 100%;
+  animation: splash-up .5s .45s both; }
+.splash-tips li { display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .18); border-radius: 14px; padding: 10px 14px; font-size: .95rem; }
+.tip { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #fff; font-weight: 800; }
+.tip.like { color: var(--like); } .tip.pass { color: var(--pass); } .tip.info { color: var(--brand); }
+.splash-btn { background: #fff; color: var(--brand); border-color: #fff; min-width: 200px; animation: splash-up .5s .55s both; }
+.splash-alt .linkish { color: #e0e7ff; font-size: .9rem; }
+.splash-foot { margin: 6px 0 0; font-size: .8rem; color: #c7d2fe; }
+.splash-foot a { color: #fff; }
+@keyframes splash-pop { from { transform: scale(.4) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes splash-up { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes splash-fill { to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .splash *, .splash-logo { animation: none !important; } .splash-bar span { width: 100%; } }

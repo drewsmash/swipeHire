@@ -35,7 +35,8 @@ by the other Docker sites on this machine. Change `WEB_PORT` in `.env` if needed
 | `docker compose down` | Stop (data kept) |
 | `docker compose down -v` | Stop **and wipe** the database + uploads → re-seeds demo data next start |
 | `docker compose exec db mysql -u swipehire_app -p swipehire` | SQL shell (password = `DB_PASSWORD` in `.env`) |
-| `docker compose exec web python fake_jobs.py 100` | Add 100 more fake job listings (keeps existing data) |
+| `docker compose exec web python scripts/make_og.py   Draws the link-preview images and icon (Pillow)
+fake_jobs.py 100` | Add 100 more fake job listings (keeps existing data) |
 | `docker compose exec web python fake_jobs.py seekers 30` | Add 30 more fake seekers with swipe history |
 | `docker compose exec web python fake_jobs.py --clear` | Remove all fake companies, their jobs, and fake seekers |
 | `docker compose ps` | Both containers should say `(healthy)` |
@@ -80,6 +81,21 @@ logs you into it.
   (`POST /jobs/recycle`, works for every seeker; keeps right swipes and matches),
   "Show all jobs (ignore my filters)", and for guests "Start over as a new guest".
   Guests also have "Start over as a new guest" in the Menu.
+- **Shareable links** – send these to testers:
+  - **https://swipehire.whalenet.net/try** → job seeker
+  - **https://swipehire.whalenet.net/try/employer** → employer
+  The page shows a 1.6 s splash (logo, tips) and then drops the visitor into a fresh
+  guest account. If they're already a guest of that kind it continues into their
+  account instead, with a "start fresh" option. The account is only created by the
+  page's script (POST /guest), never by the GET itself, so link-preview bots
+  (iMessage, WhatsApp, Discord, Slack, ...) that fetch the link don't create junk
+  accounts – tested with 6 bot user agents.
+- **Link previews:** every page has Open Graph / Twitter tags (`templates/_meta.html`),
+  with 1200×630 images `static/og-seeker.png` / `static/og-employer.png` and an iPhone
+  icon `static/icon-180.png`. Previews need absolute URLs, so set `PUBLIC_URL` in `.env`
+  (`https://swipehire.whalenet.net`). Regenerate the images with `scripts/make_og.py`
+  (instructions at the top of that file). Messaging apps cache previews, so a link that
+  was already shared may keep its old preview for a while.
 - The shared demo logins (`seeker@` / `google@swipehire.test`) still exist for
   password login, but the guest buttons no longer use them.
 
@@ -93,7 +109,7 @@ logs you into it.
 ## File map
 
 ```
-main.py              Flask app: blueprints, CSRF check, / redirect, /health
+main.py              Flask app: blueprints, CSRF check, / redirect, /try splash, /health, public_url(), static ?v= hashes
 db.py                MySQL helpers: fetch_all, fetch_one, execute, transaction
 fake_jobs.py         Generates fake test job listings (also a CLI, see commands above)
 init_db.py           Runs on container start: waits for MySQL, creates tables, seeds demo data (edit demo data here)
@@ -106,6 +122,8 @@ views/guests.py      Throwaway guest accounts: create seeker/employer, 24h clean
 views/recommend.py   Job recommendation algorithm (orders the Homepage cards, see below)
 views/admin.py       /admin (stats), /admin/users, /admin/jobs – read-only, admin role only
 views/files.py       Upload saving + /files/<resume|photo>/<seeker_id> with access check
+templates/_meta.html Link-preview tags (Open Graph/Twitter), icons – included by base.html and try.html
+templates/try.html   /try splash page (shareable guest link)
 templates/base.html  Phone shell: top bar (Menu + account icon), search slot, page title, bottom tab bar
 templates/_macros.html  search bar, bullet lines, ✕/✓ swipe buttons
 templates/seeker/*   home.html (card stack), profile.html, matches.html
