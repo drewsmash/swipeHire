@@ -122,6 +122,7 @@ views/guests.py      Throwaway guest accounts: create seeker/employer, 24h clean
 views/recommend.py   Job recommendation algorithm (orders the Homepage cards, see below)
 views/admin.py       /admin (stats), /admin/users, /admin/jobs – read-only, admin role only
 views/files.py       Upload saving + /files/<resume|photo>/<seeker_id> with access check
+scripts/take_screenshots.py  Retakes the README screenshots in docs/screenshots (Playwright in Docker, see top of file)
 templates/_meta.html Link-preview tags (Open Graph/Twitter), icons – included by base.html and try.html
 templates/try.html   /try splash page (shareable guest link)
 templates/base.html  Phone shell: top bar (Menu + account icon), search slot, page title, bottom tab bar
